@@ -1,0 +1,146 @@
+#!/usr/bin/python3
+#	pcpublish - Authoring RSS feed and custom MP3s for a podcast
+#	Copyright (C) 2022-2022 Johannes Bauer
+#
+#	This file is part of pcpublish.
+#
+#	pcpublish is free software; you can redistribute it and/or modify
+#	it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation; this program is ONLY licensed under
+#	version 3 of the License, later versions are explicitly excluded.
+#
+#	pcpublish is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#	GNU General Public License for more details.
+#
+#	You should have received a copy of the GNU General Public License
+#	along with pcpublish; if not, write to the Free Software
+#	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+#	Johannes Bauer <JohannesBauer@gmx.de>
+
+import sys
+import json
+import uuid
+import contextlib
+import collections
+import shutil
+import os
+import tempfile
+import subprocess
+from FriendlyArgumentParser import FriendlyArgumentParser
+from Tools import MP3Tools, TimeTools, TextTools
+from RSSFeedCreator import RSSFeedCreator
+from CmdlineEscape import CmdlineEscape
+
+class PodcastRenderer():
+	def __init__(self, args):
+		self._args = args
+		with open(self._args.source_json) as f:
+			self._data = json.load(f, object_pairs_hook = collections.OrderedDict)
+		self._episode_no = None
+
+	def _add_guids(self):
+		modified = False
+		for episode in self._data["episodes"]:
+			if "guid" not in episode:
+				modified = True
+				guid = str(uuid.uuid4())
+				print(f"{episode['title']}: added GUID {guid}")
+				episode["guid"] = guid
+		if modified:
+			with open("." + self._args.source_json, "w") as f:
+				json.dump(self._data, f, indent = 4, ensure_ascii = False)
+				print(file = f)
+			shutil.move("." + self._args.source_json, self._args.source_json)
+
+	def _find(self, filename):
+		search_dir = os.path.realpath(os.path.expanduser(self._args.search_dir))
+		for (dirname, subdirs, files) in os.walk(search_dir):
+			if filename in files:
+				return dirname + "/" + filename
+		raise FileNotFoundError(f"Could not find in search directory: {filename}")
+
+	def _process_episode(self, episode):
+		episode["source_filename"] = self._find(episode["filename"])
+		episode["info"] = MP3Tools.get_info(episode["source_filename"])
+		if "episode_no" not in episode:
+			if self._episode_no is not None:
+				self._episode_no += 1
+			episode["episode_no"] = self._episode_no
+		else:
+			self._episode_no = episode["episode_no"]
+		episode["pubdate"] = TimeTools.parse(episode["recdate"])
+
+		pubdate_str = episode["pubdate"].strftime("%Y_%m_%d")
+		title_filename = TextTools.make_filename(episode["title"])
+		target_filename = self._data["meta"]["target_filename"].format(episode_no = episode["episode_no"] or 0, pubdate = pubdate_str, title = title_filename)
+
+		episode["dest_filename"] = self._args.output_dir + "/files/" + target_filename
+		episode["remote_uri"] = self._data["meta"]["remote_episode_uri"].format(filename = target_filename)
+
+	@contextlib.contextmanager
+	def _create_cover_art(self, episode):
+		with tempfile.NamedTemporaryFile(suffix = ".jpg") as tmpfile:
+			cmd = [ "convert" ]
+			cmd += [ self._data["meta"]["cover_image_id3"]["source"] ]
+			cmd += [ "-strip" ]
+			for edit in self._data["meta"]["cover_image_id3"].get("edits", [ ]):
+				match edit["type"]:
+					case "annotate":
+						annotation_text = edit["text"].format(episode_no = episode["episode_no"] or 0, title = episode["title"])
+						if "font" in edit:
+							cmd += [ "-font", edit["font"] ]
+						if "font_filename" in edit:
+							cmd += [ "-font", os.path.expanduser(edit["font_filename"]) ]
+						if "fill" in edit:
+							cmd += [ "-fill", edit["fill"] ]
+						if "gravity" in edit:
+							cmd += [ "-gravity", edit["gravity"] ]
+						if "pointsize" in edit:
+							cmd += [ "-pointsize", str(edit["pointsize"]) ]
+						cmd += [ "-annotate", f"+{edit['pos'][0]}+{edit['pos'][1]}", annotation_text ]
+			cmd += [ "-quality", "85" ]
+			cmd += [ "-geometry", "800x" ]
+			cmd += [ tmpfile.name ]
+			if self._args.verbose >= 2:
+				print(CmdlineEscape().cmdline(cmd))
+			subprocess.check_call(cmd)
+			yield tmpfile.name
+
+	def _render_file(self, episode):
+		if os.path.isfile(episode["dest_filename"]):
+			return
+		try:
+			shutil.copy(episode["source_filename"], episode["dest_filename"])
+			MP3Tools.strip_tags(episode["dest_filename"])
+			with self._create_cover_art(episode) as cover_filename:
+				MP3Tools.add_tag(episode["dest_filename"], author = self._rssgen.authors, album_name = self._data["meta"]["title"], track_title = episode["title"], track_number = episode["episode_no"], genre = "podcast", year = episode["pubdate"].year, comment = episode["description"], comment_language = self._data["meta"].get("language-id3"), cover_image = cover_filename)
+		except:
+			os.unlink(episode["dest_filename"])
+			raise
+
+	def run(self):
+		if self._args.add_guids:
+			self._add_guids()
+		with contextlib.suppress(FileExistsError):
+			os.makedirs(self._args.output_dir + "/files")
+		for episode in self._data["episodes"]:
+			self._process_episode(episode)
+		self._rssgen = RSSFeedCreator(self._data)
+		self._rssgen.write_xml(self._args.output_dir + "/rss_feed.xml")
+		for episode in self._data["episodes"]:
+			self._render_file(episode)
+
+
+parser = FriendlyArgumentParser(description = "Render podcast sources into an RSS feed.")
+parser.add_argument("-a", "--add-guids", action = "store_true", help = "Add GUIDs where they are not yet present and save JSON file.")
+parser.add_argument("-d", "--search-dir", metavar = "path", default = "~/podcast", help = "File to search sources for. Defaults to %(default)s.")
+parser.add_argument("-v", "--verbose", action = "count", default = 0, help = "Increases verbosity. Can be specified multiple times to increase.")
+parser.add_argument("source_json", help = "JSON metadata definition of the podcast and its episodes.")
+parser.add_argument("output_dir", help = "Output directory to render into.")
+args = parser.parse_args(sys.argv[1:])
+
+pcr = PodcastRenderer(args)
+pcr.run()
