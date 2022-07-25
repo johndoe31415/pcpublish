@@ -118,7 +118,7 @@ class PodcastRenderer():
 			shutil.copy(episode["source_filename"], episode["dest_filename"])
 			MP3Tools.strip_tags(episode["dest_filename"])
 			with self._create_cover_art(episode) as cover_filename:
-				MP3Tools.add_tag(episode["dest_filename"], author = self._rssgen.authors, album_name = self._data["meta"]["title"], track_title = episode["title"], track_number = episode["episode_no"], genre = "podcast", year = episode["pubdate"].year, comment = episode["description"], comment_language = self._data["meta"].get("language-id3"), cover_image = cover_filename)
+				MP3Tools.add_tag(episode["dest_filename"], author = self._rssgen.authors, album_name = self._data["meta"]["title"], track_title = episode["title"], track_number = episode["episode_no"], genre = "podcast", year = episode["pubdate"].year, comment = episode["description"], comment_language = self._data["meta"].get("language-id3"), cover_image = cover_filename, uri = self._data["meta"]["web"])
 		except:
 			os.unlink(episode["dest_filename"])
 			raise
