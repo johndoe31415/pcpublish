@@ -33,6 +33,7 @@ class MP3Tools():
 	@classmethod
 	def strip_tags(cls, filename):
 		cmd = [ "eyeD3", "--remove-all", filename ]
+		subprocess.check_call(cmd)
 
 	@classmethod
 	def add_tag(cls, filename, author = None, album_name = None, track_title = None, track_number = None, genre = None, year = None, comment = None, uri = None, cover_image = None, comment_language = "eng"):
