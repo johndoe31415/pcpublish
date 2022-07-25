@@ -82,7 +82,7 @@ class PodcastRenderer():
 
 	@contextlib.contextmanager
 	def _create_cover_art(self, episode):
-		with tempfile.NamedTemporaryFile(suffix = ".jpg") as tmpfile:
+		with tempfile.NamedTemporaryFile(prefix = "cover_art_", suffix = ".jpg") as tmpfile:
 			cmd = [ "convert" ]
 			cmd += [ self._data["meta"]["cover_image_id3"]["source"] ]
 			cmd += [ "-strip" ]
@@ -107,10 +107,12 @@ class PodcastRenderer():
 			if self._args.verbose >= 2:
 				print(CmdlineEscape().cmdline(cmd))
 			subprocess.check_call(cmd)
+			if self._args.pause:
+				input("Rendering finished, press ENTER to continue...")
 			yield tmpfile.name
 
 	def _render_file(self, episode):
-		if os.path.isfile(episode["dest_filename"]):
+		if (not self._args.force_re_render) and os.path.isfile(episode["dest_filename"]):
 			return
 		try:
 			shutil.copy(episode["source_filename"], episode["dest_filename"])
@@ -135,8 +137,10 @@ class PodcastRenderer():
 
 
 parser = FriendlyArgumentParser(description = "Render podcast sources into an RSS feed.")
+parser.add_argument("-f", "--force-re-render", action = "store_true", help = "Re-render MP3s even if the destination file already exsts.")
 parser.add_argument("-a", "--add-guids", action = "store_true", help = "Add GUIDs where they are not yet present and save JSON file.")
 parser.add_argument("-d", "--search-dir", metavar = "path", default = "~/podcast", help = "File to search sources for. Defaults to %(default)s.")
+parser.add_argument("--pause", action = "store_true", help = "Pause after writing individual cover art for demo purposes.")
 parser.add_argument("-v", "--verbose", action = "count", default = 0, help = "Increases verbosity. Can be specified multiple times to increase.")
 parser.add_argument("source_json", help = "JSON metadata definition of the podcast and its episodes.")
 parser.add_argument("output_dir", help = "Output directory to render into.")
