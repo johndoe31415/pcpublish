@@ -33,7 +33,7 @@ class MP3Tools():
 	@classmethod
 	def strip_tags(cls, filename):
 		cmd = [ "eyeD3", "--remove-all", filename ]
-		subprocess.check_call(cmd)
+		subprocess.check_call(cmd, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)
 
 	@classmethod
 	def add_tag(cls, filename, author = None, album_name = None, track_title = None, track_number = None, genre = None, year = None, comment = None, uri = None, cover_image = None, comment_language = "eng"):
@@ -57,7 +57,7 @@ class MP3Tools():
 		if cover_image is not None:
 			cmd += [ "--add-image", f"{cover_image}:FRONT_COVER" ]
 		cmd += [ filename ]
-		subprocess.check_call(cmd)
+		subprocess.check_call(cmd, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)
 
 class TimeTools():
 	@classmethod
