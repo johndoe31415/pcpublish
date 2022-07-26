@@ -29,6 +29,7 @@ import shutil
 import os
 import tempfile
 import subprocess
+import mako.lookup
 from FriendlyArgumentParser import FriendlyArgumentParser
 from Tools import MP3Tools, TimeTools, TextTools
 from RSSFeedCreator import RSSFeedCreator
@@ -65,6 +66,9 @@ class PodcastRenderer():
 	def _process_episode(self, episode):
 		episode["source_filename"] = self._find(episode["filename"])
 		episode["info"] = MP3Tools.get_info(episode["source_filename"])
+		episode["ext_info"] = {
+			"duration":		TimeTools.format_hms(float(episode["info"]["streams"][0]["duration"])),
+		}
 		if "episode_no" not in episode:
 			if self._episode_no is not None:
 				self._episode_no += 1
@@ -77,7 +81,7 @@ class PodcastRenderer():
 		title_filename = TextTools.make_filename(episode["title"])
 		target_filename = self._data["meta"]["target_filename"].format(episode_no = episode["episode_no"] or 0, pubdate = pubdate_str, title = title_filename)
 
-		episode["dest_filename"] = self._args.output_dir + "/files/" + target_filename
+		episode["dest_filename"] = self._args.output_dir + "/episodes/" + target_filename
 		episode["remote_uri"] = self._data["meta"]["remote_episode_uri"].format(filename = target_filename)
 
 	@contextlib.contextmanager
@@ -111,29 +115,49 @@ class PodcastRenderer():
 				input("Rendering finished, press ENTER to continue...")
 			yield tmpfile.name
 
-	def _render_file(self, episode):
+	def _render_episode(self, episode):
 		if (not self._args.force_re_render) and os.path.isfile(episode["dest_filename"]):
 			return
+		if self._args.verbose >= 1:
+			print(f"Rendering episode: {episode['dest_filename']}")
 		try:
 			shutil.copy(episode["source_filename"], episode["dest_filename"])
 			MP3Tools.strip_tags(episode["dest_filename"])
 			with self._create_cover_art(episode) as cover_filename:
 				MP3Tools.add_tag(episode["dest_filename"], author = self._rssgen.authors, album_name = self._data["meta"]["title"], track_title = episode["title"], track_number = episode["episode_no"], genre = "podcast", year = episode["pubdate"].year, comment = episode["description"], comment_language = self._data["meta"].get("language-id3"), cover_image = cover_filename, uri = self._data["meta"]["web"])
 		except:
-			os.unlink(episode["dest_filename"])
+			with contextlib.suppress(FileNotFoundError):
+				os.unlink(episode["dest_filename"])
 			raise
+
+	def _render_template(self, template):
+		template["basename"] = os.path.basename(template["filename"])
+		template["outfile"] = self._args.output_dir + "/templates/" + template["basename"]
+		if self._args.verbose >= 1:
+			print(f"Rendering template: {template['basename']}")
+
+		template_path = os.path.realpath(os.path.dirname(template["filename"]))
+		lookup = mako.lookup.TemplateLookup([ template_path, "." ], strict_undefined = True)
+		mako_template = lookup.get_template(template["basename"])
+		output = mako_template.render(data = self._data, episodes = self._data["episodes"])
+		with open(template["outfile"], "w") as f:
+			f.write(output)
 
 	def run(self):
 		if self._args.add_guids:
 			self._add_guids()
 		with contextlib.suppress(FileExistsError):
-			os.makedirs(self._args.output_dir + "/files")
+			os.makedirs(self._args.output_dir + "/episodes")
+		with contextlib.suppress(FileExistsError):
+			os.makedirs(self._args.output_dir + "/templates")
 		for episode in self._data["episodes"]:
 			self._process_episode(episode)
 		self._rssgen = RSSFeedCreator(self._data)
 		self._rssgen.write_xml(self._args.output_dir + "/rss_feed.xml")
 		for episode in self._data["episodes"]:
-			self._render_file(episode)
+			self._render_episode(episode)
+		for template in self._data.get("templates", [ ]):
+			self._render_template(template)
 
 
 parser = FriendlyArgumentParser(description = "Render podcast sources into an RSS feed.")

@@ -60,7 +60,7 @@ class RSSFeedCreator():
 		enclosure.setAttribute("url", episode["remote_uri"])
 		enclosure.setAttribute("type", "audio/mpeg")
 		enclosure.setAttribute("length", str(episode["info"]["format"]["size"]))
-		self._add_node(item, "duration", TimeTools.format_hms(float(episode["info"]["streams"][0]["duration"])), ns = "itunes")
+		self._add_node(item, "duration", episode["ext_info"]["duration"])
 		guid = self._add_node(item, "guid", episode["guid"])
 		guid.setAttribute("isPermaLink", "false")
 
