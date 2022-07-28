@@ -21,6 +21,7 @@
 
 import xml.dom.minidom
 import json
+import sys
 from Tools import TimeTools
 
 class RSSFeedCreator():
@@ -48,6 +49,9 @@ class RSSFeedCreator():
 		return node
 
 	def _add_episode(self, channel, episode):
+		if "guid" not in episode:
+			print(f"Warning: episode \"{episode['title']}\" does not have a GUID set, not including it in XML. Run pcpublish with '-a' to add one.", file = sys.stderr)
+			return
 		item = self._add_node(channel, "item")
 		self._add_node(item, "title", episode["title"])
 		self._add_node(item, "description", episode["description"])

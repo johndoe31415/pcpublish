@@ -1,0 +1,63 @@
+{
+    "meta": {
+        "title": "De beschde Podcast vong den Welt",
+        "email": "mail@beschde-podcast-vong-welt.de",
+        "web": "https://beschde-podcast-vong-welt.de",
+        "cover_image_uri": "https://beschde-podcast-vong-welt.de/cover.jpg",
+        "rss_feed_uri": "https://beschde-podcast-vong-welt.de/rss.xml",
+        "language": "de-DE",
+        "language-id3": "ger",
+        "category": "Technology",
+        "description": "Des is voll der gute Podcast. Echt jetzt, Junge. Hör den. Ehrlich fei.",
+        "author": [
+			"Bruno Bromwitz",
+			"Hauke Haudegen"
+        ],
+        "remote_episode_uri": "https://beschde-podcast-vong-welt.de/episode/{filename}",
+        "target_filename": "{episode_no:03d}_{pubdate}_{title}.mp3",
+        "cover_image_id3": {
+            "source": "media/cover.jpg",
+            "edits": [
+                {
+                    "type": "annotate",
+                    "pos": [
+                        0,
+                        550
+                    ],
+                    "gravity": "north",
+                    "font_filename": "media/FrancoisOne-Regular.ttf",
+                    "fill": "#2c3e50",
+                    "pointsize": 82,
+                    "text": "Folge {episode_no}: {title}"
+                }
+            ]
+        },
+        "keywords": [
+			"beschde",
+			"pottkast"
+        ],
+		"date_locale": "de_DE"
+    },
+    "templates": [
+        {
+            "filename": "templates/index.html"
+        }
+    ],
+    "episodes": [
+        {
+            "filename": "podcast000.mp3",
+            "title": "Introfolge",
+            "description_short": "Was machen wir ey",
+            "description": "Alda, was machen wir ey? Ich weiß nich.",
+            "recdate": "2022-01-01"
+        },
+        {
+            "episode_no": 1,
+            "filename": "podcast001.mp3",
+            "title": "Digge Autos",
+            "description_short": "Digge Autos sind digg und gut",
+            "description": "Heute reden wir über digge, sehr digge und sehr sehr digge Autos und das is echt mega die gute Pottkast Folge",
+            "recdate": "2022-02-01"
+        }
+    ]
+}
