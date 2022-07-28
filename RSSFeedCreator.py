@@ -61,7 +61,7 @@ class RSSFeedCreator():
 		self._add_node(item, "summary", episode["description"], ns = "itunes")
 		self._add_node(item, "pubDate", TimeTools.format_rfc822(episode["pubdate"]))
 		enclosure = self._add_node(item, "enclosure")
-		enclosure.setAttribute("url", episode["remote_uri"])
+		enclosure.setAttribute("url", episode["remote_uri"]["episode"])
 		enclosure.setAttribute("type", "audio/mpeg")
 		enclosure.setAttribute("length", str(episode["info"]["format"]["size"]))
 		self._add_node(item, "duration", episode["ext_info"]["duration"])

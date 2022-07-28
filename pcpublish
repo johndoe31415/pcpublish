@@ -95,10 +95,16 @@ class PodcastRenderer():
 
 		pubdate_str = episode["pubdate"].strftime("%Y_%m_%d")
 		title_filename = TextTools.make_filename(episode["title"])
-		target_filename = self._data["meta"]["target_filename"].format(episode_no = episode["episode_no"] or 0, pubdate = pubdate_str, title = title_filename)
+		target_filename_prefix = self._data["meta"]["target_filename_prefix"].format(episode_no = episode["episode_no"] or 0, pubdate = pubdate_str, title = title_filename)
 
-		episode["dest_filename"] = self._args.output_dir + "/episodes/" + target_filename
-		episode["remote_uri"] = self._data["meta"]["remote_episode_uri"].format(filename = target_filename)
+		episode["dest_filename"] = {
+			"episode":		self._args.output_dir + "/episodes/" + target_filename_prefix + ".mp3",
+			"cover_art":	self._args.output_dir + "/cover_art/" + target_filename_prefix + ".jpg",
+		}
+		episode["remote_uri"] = {
+			"episode":		self._data["meta"]["remote_uri"]["episode"].format(filename = target_filename_prefix + ".mp3"),
+			"cover_art":	self._data["meta"]["remote_uri"]["cover_art"].format(filename = target_filename_prefix + ".jpg"),
+		}
 
 	@contextlib.contextmanager
 	def _create_cover_art(self, episode):
@@ -131,22 +137,43 @@ class PodcastRenderer():
 				input("Rendering finished, press ENTER to continue...")
 			yield tmpfile.name
 
+	def _render_episode_cover_art(self, episode):
+		if (not self._args.force_re_render) and os.path.isfile(episode["dest_filename"]["cover_art"]):
+			return
+		if self._args.verbose >= 1:
+			print(f"Rendering episode cover art: {episode['dest_filename']['cover_art']}")
+		try:
+			with self._create_cover_art(episode) as cover_filename:
+				with open(cover_filename, "rb") as in_f, open(episode["dest_filename"]["cover_art"], "wb") as out_f:
+					out_f.write(in_f.read())
+		except:
+			with contextlib.suppress(FileNotFoundError):
+				os.unlink(episode["dest_filename"]["cover_art"])
+			raise
+
+	def _render_episode_mp3(self, episode):
+		if (not self._args.force_re_render) and os.path.isfile(episode["dest_filename"]["episode"]):
+			return
+		if self._args.verbose >= 1:
+			print(f"Rendering episode MP3: {episode['dest_filename']['episode']}")
+		try:
+			shutil.copy(episode["source_filename"], episode["dest_filename"]["episode"])
+			MP3Tools.strip_tags(episode["dest_filename"]["episode"])
+			MP3Tools.add_tag(episode["dest_filename"]["episode"], author = self._rssgen.authors, album_name = self._data["meta"]["title"], track_title = episode["title"], track_number = episode["episode_no"], genre = "podcast", year = episode["pubdate"].year, comment = episode["description"], comment_language = self._data["meta"].get("language-id3"), cover_image = episode["dest_filename"]["cover_art"], uri = self._data["meta"]["web"])
+		except:
+			with contextlib.suppress(FileNotFoundError):
+				os.unlink(episode["dest_filename"]["episode"])
+			raise
+
 	def _render_episode(self, episode):
 		if episode["source_filename"] is None:
 			return
-		if (not self._args.force_re_render) and os.path.isfile(episode["dest_filename"]):
+		if episode.get("hidden", False):
 			return
-		if self._args.verbose >= 1:
-			print(f"Rendering episode: {episode['dest_filename']}")
-		try:
-			shutil.copy(episode["source_filename"], episode["dest_filename"])
-			MP3Tools.strip_tags(episode["dest_filename"])
-			with self._create_cover_art(episode) as cover_filename:
-				MP3Tools.add_tag(episode["dest_filename"], author = self._rssgen.authors, album_name = self._data["meta"]["title"], track_title = episode["title"], track_number = episode["episode_no"], genre = "podcast", year = episode["pubdate"].year, comment = episode["description"], comment_language = self._data["meta"].get("language-id3"), cover_image = cover_filename, uri = self._data["meta"]["web"])
-		except:
-			with contextlib.suppress(FileNotFoundError):
-				os.unlink(episode["dest_filename"])
-			raise
+
+		self._render_episode_cover_art(episode)
+		self._render_episode_mp3(episode)
+
 
 	def _format_date(self, dt, format = "short"):
 		return babel.dates.format_date(dt, format = format, locale = self._data["meta"].get("date_locale", "en_US"))
@@ -174,6 +201,8 @@ class PodcastRenderer():
 			self._add_guids()
 		with contextlib.suppress(FileExistsError):
 			os.makedirs(self._args.output_dir + "/episodes")
+		with contextlib.suppress(FileExistsError):
+			os.makedirs(self._args.output_dir + "/cover_art")
 		with contextlib.suppress(FileExistsError):
 			os.makedirs(self._args.output_dir + "/templates")
 		for episode in self._data["episodes"]:

@@ -10,11 +10,14 @@
         "category": "Technology",
         "description": "Des is voll der gute Podcast. Echt jetzt, Junge. Hör den. Ehrlich fei.",
         "author": [
-			"Bruno Bromwitz",
-			"Hauke Haudegen"
+            "Bruno Bromwitz",
+            "Hauke Haudegen"
         ],
-        "remote_episode_uri": "https://beschde-podcast-vong-welt.de/episode/{filename}",
-        "target_filename": "{episode_no:03d}_{pubdate}_{title}.mp3",
+        "remote_uri": {
+            "episode": "https://beschde-podcast-vong-welt.de/episode/{filename}",
+            "cover_art": "https://beschde-podcast-vong-welt.de/cover_art/{filename}"
+        },
+        "target_filename_prefix": "{episode_no:03d}_{pubdate}_{title}",
         "cover_image_id3": {
             "source": "media/cover.jpg",
             "edits": [
@@ -33,10 +36,10 @@
             ]
         },
         "keywords": [
-			"beschde",
-			"pottkast"
+            "beschde",
+            "pottkast"
         ],
-		"date_locale": "de_DE"
+        "date_locale": "de_DE"
     },
     "templates": [
         {
@@ -49,7 +52,8 @@
             "title": "Introfolge",
             "description_short": "Was machen wir ey",
             "description": "Alda, was machen wir ey? Ich weiß nich.",
-            "recdate": "2022-01-01"
+            "recdate": "2022-01-01",
+            "guid": "4099fbfd-92ce-40cf-a4ae-34aff49a69ce"
         },
         {
             "episode_no": 1,
@@ -57,7 +61,8 @@
             "title": "Digge Autos",
             "description_short": "Digge Autos sind digg und gut",
             "description": "Heute reden wir über digge, sehr digge und sehr sehr digge Autos und das is echt mega die gute Pottkast Folge",
-            "recdate": "2022-02-01"
+            "recdate": "2022-02-01",
+            "guid": "ac35f23b-6212-4f3d-b36d-731836541740"
         }
     ]
 }
