@@ -30,6 +30,7 @@ import os
 import tempfile
 import subprocess
 import mako.lookup
+import babel.dates
 from FriendlyArgumentParser import FriendlyArgumentParser
 from Tools import MP3Tools, TimeTools, TextTools
 from RSSFeedCreator import RSSFeedCreator
@@ -147,6 +148,9 @@ class PodcastRenderer():
 				os.unlink(episode["dest_filename"])
 			raise
 
+	def _format_date(self, dt, format = "short"):
+		return babel.dates.format_date(dt, format = format, locale = self._data["meta"].get("date_locale", "en_US"))
+
 	def _render_template(self, template):
 		template["basename"] = os.path.basename(template["filename"])
 		template["outfile"] = self._args.output_dir + "/templates/" + template["basename"]
@@ -156,7 +160,12 @@ class PodcastRenderer():
 		template_path = os.path.realpath(os.path.dirname(template["filename"]))
 		lookup = mako.lookup.TemplateLookup([ template_path, "." ], strict_undefined = True)
 		mako_template = lookup.get_template(template["basename"])
-		output = mako_template.render(data = self._data, episodes = self._data["episodes"])
+		template_vars = {
+			"data":			self._data,
+			"episodes":		self._data["episodes"],
+			"format_date":	self._format_date,
+		}
+		output = mako_template.render(**template_vars)
 		with open(template["outfile"], "w") as f:
 			f.write(output)
 
