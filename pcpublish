@@ -115,7 +115,8 @@ class PodcastRenderer():
 			for edit in self._data["meta"]["cover_image_id3"].get("edits", [ ]):
 				match edit["type"]:
 					case "annotate":
-						annotation_text = edit["text"].format(episode_no = episode["episode_no"] or 0, title = episode["title"])
+						title = episode["cover_art_title"] if ("cover_art_title" in episode) else episode["title"]
+						annotation_text = edit["text"].format(episode_no = episode["episode_no"] or 0, title = title)
 						if "font" in edit:
 							cmd += [ "-font", edit["font"] ]
 						if "font_filename" in edit:
