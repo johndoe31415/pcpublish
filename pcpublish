@@ -64,11 +64,26 @@ class PodcastRenderer():
 		raise FileNotFoundError(f"Could not find in search directory: {filename}")
 
 	def _process_episode(self, episode):
-		episode["source_filename"] = self._find(episode["filename"])
-		episode["info"] = MP3Tools.get_info(episode["source_filename"])
-		episode["ext_info"] = {
-			"duration":		TimeTools.format_hms(float(episode["info"]["streams"][0]["duration"])),
-		}
+		try:
+			episode["source_filename"] = self._find(episode["filename"])
+			episode["info"] = MP3Tools.get_info(episode["source_filename"])
+			episode["ext_info"] = {
+				"duration":		TimeTools.format_hms(float(episode["info"]["streams"][0]["duration"])),
+			}
+		except FileNotFoundError:
+			# Put in dummy information so we can at least run successfully
+			# without all source MP3s to check the website.
+			episode["source_filename"] = None
+			episode["info"] = {
+				"format": {
+					"size": 12345678,
+				}
+			}
+			episode["ext_info"] = {
+				"duration":		"12:34",
+			}
+			print(f"Warning: {episode['filename']} could not be found in source directories, cannot render MP3.", file = sys.stderr)
+
 		if "episode_no" not in episode:
 			if self._episode_no is not None:
 				self._episode_no += 1
@@ -116,6 +131,8 @@ class PodcastRenderer():
 			yield tmpfile.name
 
 	def _render_episode(self, episode):
+		if episode["source_filename"] is None:
+			return
 		if (not self._args.force_re_render) and os.path.isfile(episode["dest_filename"]):
 			return
 		if self._args.verbose >= 1:
