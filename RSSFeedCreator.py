@@ -80,7 +80,7 @@ class RSSFeedCreator():
 
 		self._add_node(channel, "title", self._data["meta"]["title"])
 		link = self._add_node(channel, "link", ns = "atom")
-		link.setAttribute("href", self._data["meta"]["rss_feed_uri"])
+		link.setAttribute("href", self._data["meta"]["remote_uri"]["rss_feed"])
 		link.setAttribute("rel", "self")
 		link.setAttribute("type", "application/rss+xml")
 
@@ -101,10 +101,10 @@ class RSSFeedCreator():
 
 		self._add_node(channel, "description", self._data["meta"]["description"])
 		img = self._add_node(channel, "image", ns = "itunes")
-		img.setAttribute("href", self._data["meta"]["cover_image_uri"])
+		img.setAttribute("href", self._data["meta"]["remote_uri"]["cover_image"])
 
-		self._add_node(channel, "language", self._data["meta"]["language"])
-		self._add_node(channel, "link", self._data["meta"]["web"])
+		self._add_node(channel, "language", self._data["meta"]["locale"]["rss"])
+		self._add_node(channel, "link", self._data["meta"]["remote_uri"]["website"])
 		for episode in self._data["episodes"]:
 			self._add_episode(channel, episode)
 
