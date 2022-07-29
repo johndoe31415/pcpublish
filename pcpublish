@@ -42,6 +42,7 @@ class PodcastRenderer():
 		with open(self._args.source_json) as f:
 			self._data = json.load(f, object_pairs_hook = collections.OrderedDict)
 		self._episode_no = None
+		self._uid = 0
 
 	def _add_guids(self):
 		modified = False
@@ -179,6 +180,10 @@ class PodcastRenderer():
 	def _format_date(self, dt, format = "short"):
 		return babel.dates.format_date(dt, format = format, locale = self._data["meta"].get("date_locale", "en_US"))
 
+	def _gen_uid(self):
+		self._uid += 1
+		return self._uid
+
 	def _render_template(self, template):
 		template["basename"] = os.path.basename(template["filename"])
 		template["outfile"] = self._args.output_dir + "/templates/" + template["basename"]
@@ -192,6 +197,7 @@ class PodcastRenderer():
 			"data":			self._data,
 			"episodes":		self._data["episodes"],
 			"format_date":	self._format_date,
+			"uid":			self._gen_uid,
 		}
 		output = mako_template.render(**template_vars)
 		with open(template["outfile"], "w") as f:
