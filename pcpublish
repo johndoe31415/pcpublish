@@ -139,6 +139,10 @@ class PodcastRenderer():
 							cmd += [ "-gravity", edit["gravity"] ]
 						if "pointsize" in edit:
 							cmd += [ "-pointsize", str(edit["pointsize"]) ]
+						if "stroke" in edit:
+							cmd += [ "-stroke", edit["stroke"] ]
+						if "strokewidth" in edit:
+							cmd += [ "-strokewidth", str(edit["strokewidth"]) ]
 						cmd += [ "-annotate", f"+{edit['pos'][0]}+{edit['pos'][1]}", annotation_text ]
 			cmd += [ "-quality", "85" ]
 			cmd += [ "-geometry", "800x" ]
