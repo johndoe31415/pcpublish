@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 #	pcpublish - Authoring RSS feed and custom MP3s for a podcast
 #	Copyright (C) 2022-2022 Johannes Bauer
 #
