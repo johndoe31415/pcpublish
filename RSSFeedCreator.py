@@ -36,7 +36,8 @@ class RSSFeedCreator():
 
 	@property
 	def authors(self):
-		return ", ".join(self._data["meta"]["author"])
+		author_join = self._data["meta"].get("author_join", ", ")
+		return author_join.join(self._data["meta"]["author"])
 
 	def _add_node(self, parent, name, text = None, ns = None):
 		doc = parent.ownerDocument
