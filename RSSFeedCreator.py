@@ -63,6 +63,8 @@ class RSSFeedCreator():
 		self._add_node(item, "title", episode["title"], ns = "itunes")
 		self._add_node(item, "subtitle", episode["description_short"], ns = "itunes")
 		self._add_node(item, "author", self.authors, ns = "itunes")
+		if "rss-episode" in episode["remote_uri"]["cover_art"]:
+			self._add_node(item, "image", episode["remote_uri"]["cover_art"]["rss-episode"], ns = "itunes")
 		self._add_node(item, "summary", episode["description"], ns = "itunes")
 		self._add_node(item, "pubDate", TimeTools.format_rfc822(episode["pubdate"]))
 		enclosure = self._add_node(item, "enclosure")
