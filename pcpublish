@@ -54,7 +54,7 @@ class PodcastRenderer():
 				episode["guid"] = guid
 		if modified:
 			with open("." + self._args.source_json, "w") as f:
-				json.dump(self._data, f, indent = 4, ensure_ascii = False)
+				json.dump(self._data, f, indent = "\t", ensure_ascii = False)
 				print(file = f)
 			shutil.move("." + self._args.source_json, self._args.source_json)
 
