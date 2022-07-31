@@ -30,8 +30,9 @@ class RSSFeedCreator():
 		"itunes":		"http://www.itunes.com/dtds/podcast-1.0.dtd",
 		"googleplay":	"http://www.google.com/schemas/play-podcasts/1.0",
 	}
-	def __init__(self, meta):
+	def __init__(self, meta, show_episodes_without_mp3 = False):
 		self._data = meta
+		self._show_episodes_without_mp3 = show_episodes_without_mp3
 
 	@property
 	def authors(self):
@@ -51,6 +52,9 @@ class RSSFeedCreator():
 	def _add_episode(self, channel, episode):
 		if "guid" not in episode:
 			print(f"Warning: episode \"{episode['title']}\" does not have a GUID set, not including it in XML. Run pcpublish with '-a' to add one.", file = sys.stderr)
+			return
+		if (not self._show_episodes_without_mp3) and (not episode["have_audiofile"]):
+			# Audio file not present
 			return
 		item = self._add_node(channel, "item")
 		self._add_node(item, "title", episode["title"])
