@@ -113,11 +113,11 @@ class PodcastRenderer():
 
 		episode["dest_filename"] = {
 			"episode":		self._args.output_dir + "/" + self._format(self._data["meta"]["episode"]["destination"], filename = target_filename_prefix + ".mp3"),
-			"cover_art":	{ key: self._args.output_dir + "/" + self._format(value["destination"], filename = target_filename_prefix + ".jpg") for (key, value) in self._data["meta"].get("cover_images", { }).items() },
+			"cover_art":	{ key: self._args.output_dir + "/" + self._format(value["destination"], filename = target_filename_prefix) for (key, value) in self._data["meta"].get("cover_images", { }).items() },
 		}
 		episode["remote_uri"] = {
 			"episode":		self._format(self._data["meta"]["remote_uri"]["episode"], filename = target_filename_prefix + ".mp3"),
-			"cover_art":	{ key: self._format(value["uri"], filename = target_filename_prefix + ".jpg") for (key, value) in self._data["meta"].get("cover_images", { }).items() if "uri" in value },
+			"cover_art":	{ key: self._format(value["uri"], filename = target_filename_prefix) for (key, value) in self._data["meta"].get("cover_images", { }).items() if "uri" in value },
 		}
 
 	@contextlib.contextmanager
