@@ -146,8 +146,13 @@ class PodcastRenderer():
 						if "strokewidth" in edit:
 							cmd += [ "-strokewidth", str(edit["strokewidth"]) ]
 						cmd += [ "-annotate", f"+{edit['pos'][0]}+{edit['pos'][1]}", annotation_text ]
-			cmd += [ "-quality", "85" ]
-			cmd += [ "-geometry", "800x" ]
+					case "scale":
+						if "geometry" in edit:
+							cmd += [ "-geometry", edit["geometry"] ]
+						if "quality" in edit:
+							cmd += [ "-quality", str(edit["quality"]) ]
+					case _:
+						raise NotImplementedError(edit["type"])
 			cmd += [ tmpfile.name ]
 			if self._args.verbose >= 2:
 				print(CmdlineEscape().cmdline(cmd))
