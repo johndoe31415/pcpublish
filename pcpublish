@@ -119,6 +119,10 @@ class PodcastRenderer():
 			"episode":		self._format(self._data["meta"]["remote_uri"]["episode"], filename = target_filename_prefix + ".mp3"),
 			"cover_art":	{ key: self._format(value["uri"], filename = target_filename_prefix) for (key, value) in self._data["meta"].get("cover_images", { }).items() if "uri" in value },
 		}
+		if "video" in self._data:
+			episode["dest_filename"]["video"] = self._args.output_dir + "/" + self._format(self._data["video"]["destination"], filename = target_filename_prefix)
+			if "uri" in self._data["video"]:
+				episode["remote_uri"]["video"] = self._format(self._data["video"]["uri"], filename = target_filename_prefix),
 
 	@contextlib.contextmanager
 	def _create_cover_art(self, episode, cover_art_instructions):
@@ -195,6 +199,31 @@ class PodcastRenderer():
 				os.unlink(episode["dest_filename"]["episode"])
 			raise
 
+	def _render_episode_video(self, episode):
+		if "video" not in self._data:
+			return
+		cover_art = self._data["video"].get("cover_art", "video")
+		if not cover_art in episode["dest_filename"]["cover_art"]:
+			print(f"Warning: refusing to render video without cover art (looking for '{cover_art}').")
+			return
+		cmd = [ "ffmpeg" ]
+		cmd += [ "-loop", "1", "-r", "1" ]
+		cmd += [ "-i", episode["dest_filename"]["cover_art"][cover_art] ]
+		cmd += [ "-i", episode["dest_filename"]["episode"] ]
+		cmd += [ "-c:v", "libx264", "-tune", "stillimage" ]
+		cmd += [ "-c:a", "copy" ]
+		cmd += [ "-pix_fmt", "yuv420p", "-shortest" ]
+		cmd += [ episode["dest_filename"]["video"] ]
+		try:
+			if self._args.verbose >= 2:
+				print(CmdlineEscape().cmdline(cmd))
+			self._makedirs(os.path.dirname(episode["dest_filename"]["video"]))
+			subprocess.check_call(cmd)
+		except:
+			with contextlib.suppress(FileNotFoundError):
+				os.unlink(episode["dest_filename"]["video"])
+			raise
+
 	def _render_episode(self, episode):
 		if episode["source_filename"] is None:
 			return
@@ -203,6 +232,7 @@ class PodcastRenderer():
 
 		self._render_episode_cover_arts(episode)
 		self._render_episode_mp3(episode)
+		self._render_episode_video(episode)
 
 	def _format_date(self, dt, format = "short"):
 		return babel.dates.format_date(dt, format = format, locale = self._data["meta"]["locale"]["locale"])
