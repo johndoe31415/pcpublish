@@ -109,20 +109,20 @@ class PodcastRenderer():
 
 		pubdate_str = episode["pubdate"].strftime("%Y_%m_%d")
 		title_filename = TextTools.make_filename(episode["title"])
-		target_filename_prefix = self._data["meta"]["episode"]["name"].format(episode_no = episode["episode_no"] or 0, pubdate = pubdate_str, title = title_filename)
+		episode["target_filename_prefix"] = self._data["meta"]["episode"]["name"].format(episode_no = episode["episode_no"] or 0, pubdate = pubdate_str, title = title_filename)
 
 		episode["dest_filename"] = {
-			"episode":		self._args.output_dir + "/" + self._format(self._data["meta"]["episode"]["destination"], filename = target_filename_prefix + ".mp3"),
-			"cover_art":	{ key: self._args.output_dir + "/" + self._format(value["destination"], filename = target_filename_prefix) for (key, value) in self._data["meta"].get("cover_images", { }).items() },
+			"episode":		self._args.output_dir + "/" + self._format(self._data["meta"]["episode"]["destination"], filename = episode["target_filename_prefix"] + ".mp3"),
+			"cover_art":	{ key: self._args.output_dir + "/" + self._format(value["destination"], filename = episode["target_filename_prefix"]) for (key, value) in self._data["meta"].get("cover_images", { }).items() },
 		}
 		episode["remote_uri"] = {
-			"episode":		self._format(self._data["meta"]["remote_uri"]["episode"], filename = target_filename_prefix + ".mp3"),
-			"cover_art":	{ key: self._format(value["uri"], filename = target_filename_prefix) for (key, value) in self._data["meta"].get("cover_images", { }).items() if "uri" in value },
+			"episode":		self._format(self._data["meta"]["remote_uri"]["episode"], filename = episode["target_filename_prefix"] + ".mp3"),
+			"cover_art":	{ key: self._format(value["uri"], filename = episode["target_filename_prefix"]) for (key, value) in self._data["meta"].get("cover_images", { }).items() if "uri" in value },
 		}
 		if "video" in self._data:
-			episode["dest_filename"]["video"] = self._args.output_dir + "/" + self._format(self._data["video"]["destination"], filename = target_filename_prefix)
+			episode["dest_filename"]["video"] = self._args.output_dir + "/" + self._format(self._data["video"]["destination"], filename = episode["target_filename_prefix"])
 			if "uri" in self._data["video"]:
-				episode["remote_uri"]["video"] = self._format(self._data["video"]["uri"], filename = target_filename_prefix),
+				episode["remote_uri"]["video"] = self._format(self._data["video"]["uri"], filename = episode["target_filename_prefix"]),
 
 	@contextlib.contextmanager
 	def _create_cover_art(self, episode, cover_art_instructions):
@@ -206,6 +206,8 @@ class PodcastRenderer():
 		if not cover_art in episode["dest_filename"]["cover_art"]:
 			print(f"Warning: refusing to render video without cover art (looking for '{cover_art}').")
 			return
+		if (not self._args.force_re_render) and os.path.isfile(episode["dest_filename"]["video"]):
+			return
 		cmd = [ "ffmpeg" ]
 		cmd += [ "-loop", "1", "-r", "1" ]
 		cmd += [ "-i", episode["dest_filename"]["cover_art"][cover_art] ]
@@ -241,12 +243,7 @@ class PodcastRenderer():
 		self._uid += 1
 		return self._uid
 
-	def _render_template(self, template):
-		template["basename"] = os.path.basename(template["filename"])
-		template["outfile"] = self._args.output_dir + "/templates/" + template["basename"]
-		if self._args.verbose >= 1:
-			print(f"Rendering template: {template['basename']}")
-
+	def _render_episode_template(self, template, episode):
 		template_path = os.path.realpath(os.path.dirname(template["filename"]))
 		lookup = mako.lookup.TemplateLookup([ template_path, "." ], strict_undefined = True)
 		mako_template = lookup.get_template(template["basename"])
@@ -255,11 +252,30 @@ class PodcastRenderer():
 			"episodes":		self._data["episodes"],
 			"format_date":	self._format_date,
 			"uid":			self._gen_uid,
+			"cle":			CmdlineEscape(),
 		}
+		if episode is not None:
+			template_vars["episode"] = episode
 		output = mako_template.render(**template_vars)
 		self._makedirs(os.path.dirname(template["outfile"]))
 		with open(template["outfile"], "w") as f:
 			f.write(output)
+
+	def _render_global_template(self, template):
+		return self._render_episode_template(template, episode = None)
+
+	def _render_template(self, template):
+		per_episode = template.get("per_episode", False)
+		template["basename"] = os.path.basename(template["filename"])
+		if self._args.verbose >= 1:
+			print(f"Rendering template: {template['basename']}")
+		if not per_episode:
+			template["outfile"] = self._args.output_dir + "/templates/" + template["basename"]
+			self._render_global_template(template)
+		else:
+			for episode in self._data["episodes"]:
+				template["outfile"] = self._args.output_dir + "/" + self._format(template["destination"], filename = episode["target_filename_prefix"])
+				self._render_episode_template(template, episode)
 
 	def _process_general_variables(self):
 		self._data["meta"]["remote_uri"]["rss_feed"] = self._format(self._data["meta"]["remote_uri"]["rss_feed"])
