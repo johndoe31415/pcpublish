@@ -21,6 +21,8 @@
 
 import json
 import subprocess
+import re
+import pytz
 import datetime
 import email.utils
 
@@ -60,6 +62,8 @@ class MP3Tools():
 		subprocess.check_call(cmd, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)
 
 class TimeTools():
+	_TS_TIMEZONE = re.compile("(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})(\s+(?P<hour>\d{2}):(?P<minute>\d{2}):(?P<second>\d{2})(\s+(?P<timezone>.+))?)?")
+
 	@classmethod
 	def format_hms(cls, secs_total):
 		secs_total = round(secs_total)
@@ -73,7 +77,22 @@ class TimeTools():
 
 	@classmethod
 	def parse(cls, text):
-		return datetime.datetime.strptime(text, "%Y-%m-%d")
+		result = cls._TS_TIMEZONE.fullmatch(text)
+		if result is None:
+			raise ValueError(f"Cannot parse as datetime: {text}")
+
+		result = result.groupdict()
+		if result["timezone"] is not None:
+			# day time tz
+			ts = datetime.datetime(int(result["year"]), int(result["month"]), int(result["day"]), int(result["hour"]), int(result["minute"]), int(result["second"]))
+			tz = pytz.timezone(result["timezone"])
+			return tz.localize(ts)
+		elif result["hour"] is not None:
+			# day time
+			return datetime.datetime(int(result["year"]), int(result["month"]), int(result["day"]), int(result["hour"]), int(result["minute"]), int(result["second"]))
+		else:
+			# day
+			return datetime.datetime(int(result["year"]), int(result["month"]), int(result["day"]))
 
 	@classmethod
 	def format_rfc822(cls, dt):
@@ -97,3 +116,9 @@ class TextTools():
 		for (src, dst) in cls._REPLACEMENTS:
 			filename = filename.replace(src, dst)
 		return filename
+
+if __name__ == "__main__":
+	print(TimeTools.parse("2022-06-09 12:34:56 Europe/Berlin"))
+	print(TimeTools.parse("2022-06-09 12:34:56"))
+	print(TimeTools.parse("2022-06-09"))
+	print(TimeTools.format_rfc822(TimeTools.parse("2022-06-09 12:34:56 Europe/Berlin")))

@@ -105,7 +105,11 @@ class PodcastRenderer():
 			episode["episode_no"] = self._episode_no
 		else:
 			self._episode_no = episode["episode_no"]
-		episode["pubdate"] = TimeTools.parse(episode["recdate"])
+		episode["recdate"] = TimeTools.parse(episode["recdate"])
+		if "pubdate" in episode:
+			episode["pubdate"] = TimeTools.parse(episode["pubdate"])
+		else:
+			episode["pubdate"] = episode["recdate"]
 
 		pubdate_str = episode["pubdate"].strftime("%Y_%m_%d")
 		title_filename = TextTools.make_filename(episode["title"])
