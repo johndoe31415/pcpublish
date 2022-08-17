@@ -233,6 +233,8 @@ class PodcastRenderer():
 			raise
 
 	def _render_episode(self, episode):
+		episode["rendered"] = False
+
 		if episode["source_filename"] is None:
 			return
 		if episode.get("hidden", False):
@@ -243,6 +245,7 @@ class PodcastRenderer():
 			# Episode in future
 			return
 
+		episode["rendered"] = True
 		self._render_episode_cover_arts(episode)
 		self._render_episode_mp3(episode)
 		self._render_episode_video(episode)
@@ -260,7 +263,8 @@ class PodcastRenderer():
 		mako_template = lookup.get_template(template["basename"])
 		template_vars = {
 			"data":			self._data,
-			"episodes":		self._data["episodes"],
+			"episodes":		[ episode for episode in self._data["episodes"] if episode["rendered"] ],
+			"all_episodes":	self._data["episodes"],
 			"format_date":	self._format_date,
 			"uid":			self._gen_uid,
 			"cle":			CmdlineEscape(),
