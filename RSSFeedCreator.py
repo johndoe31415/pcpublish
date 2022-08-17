@@ -113,7 +113,8 @@ class RSSFeedCreator():
 		self._add_node(channel, "language", self._data["meta"]["locale"]["rss"])
 		self._add_node(channel, "link", self._data["meta"]["remote_uri"]["website"])
 		for episode in self._data["episodes"]:
-			self._add_episode(channel, episode)
+			if episode["rendered"]:
+				self._add_episode(channel, episode)
 
 		return doc
 

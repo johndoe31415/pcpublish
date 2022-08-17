@@ -316,10 +316,10 @@ class PodcastRenderer():
 		self._makedirs(self._args.output_dir)
 		for episode in self._data["episodes"]:
 			self._process_episode(episode)
-		self._rssgen = RSSFeedCreator(self._data, show_episodes_without_mp3 = self._args.show_episodes_without_mp3)
-		self._rssgen.write_xml(self._args.output_dir + "/rss_feed.xml")
 		for episode in self._data["episodes"]:
 			self._render_episode(episode)
+		self._rssgen = RSSFeedCreator(self._data, show_episodes_without_mp3 = self._args.show_episodes_without_mp3)
+		self._rssgen.write_xml(self._args.output_dir + "/rss_feed.xml")
 		for template in self._data.get("templates", [ ]):
 			self._render_template(template)
 
