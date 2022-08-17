@@ -259,6 +259,12 @@ class PodcastRenderer():
 			"cle":			CmdlineEscape(),
 		}
 		if episode is not None:
+			if "uri" in template:
+				uri = self._format(template["uri"], filename = episode["target_filename_prefix"])
+				if "templates" not in episode["remote_uri"]:
+					episode["remote_uri"]["templates"] = { }
+				episode["remote_uri"]["templates"][template["filename"]] = uri
+				template_vars["uri"] = uri
 			template_vars["episode"] = episode
 		output = mako_template.render(**template_vars)
 		self._makedirs(os.path.dirname(template["outfile"]))
