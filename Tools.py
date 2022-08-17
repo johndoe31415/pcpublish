@@ -109,12 +109,14 @@ class TextTools():
 		("Ü", "Ue"),
 		("ß", "ss"),
 	)
+	_REMAINING_REGEX = re.compile("[^-_a-zA-Z]")
 
 	@classmethod
 	def make_filename(cls, text):
 		filename = text
 		for (src, dst) in cls._REPLACEMENTS:
 			filename = filename.replace(src, dst)
+		filename = cls._REMAINING_REGEX.sub("", filename)
 		return filename
 
 if __name__ == "__main__":
