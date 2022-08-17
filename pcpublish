@@ -29,6 +29,8 @@ import shutil
 import os
 import tempfile
 import subprocess
+import datetime
+import pytz
 import mako.lookup
 import babel.dates
 from FriendlyArgumentParser import FriendlyArgumentParser
@@ -234,6 +236,11 @@ class PodcastRenderer():
 		if episode["source_filename"] is None:
 			return
 		if episode.get("hidden", False):
+			return
+
+		now = pytz.UTC.localize(datetime.datetime.utcnow())
+		if episode["pubdate"] > now:
+			# Episode in future
 			return
 
 		self._render_episode_cover_arts(episode)

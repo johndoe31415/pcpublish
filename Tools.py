@@ -89,10 +89,12 @@ class TimeTools():
 			return tz.localize(ts)
 		elif result["hour"] is not None:
 			# day time
-			return datetime.datetime(int(result["year"]), int(result["month"]), int(result["day"]), int(result["hour"]), int(result["minute"]), int(result["second"]))
+			ts = datetime.datetime(int(result["year"]), int(result["month"]), int(result["day"]), int(result["hour"]), int(result["minute"]), int(result["second"]))
+			return pytz.UTC.localize(ts)
 		else:
 			# day
-			return datetime.datetime(int(result["year"]), int(result["month"]), int(result["day"]))
+			ts = datetime.datetime(int(result["year"]), int(result["month"]), int(result["day"]))
+			return pytz.UTC.localize(ts)
 
 	@classmethod
 	def format_rfc822(cls, dt):
