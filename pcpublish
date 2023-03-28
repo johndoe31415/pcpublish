@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #	pcpublish - Authoring RSS feed and custom MP3s for a podcast
-#	Copyright (C) 2022-2022 Johannes Bauer
+#	Copyright (C) 2022-2023 Johannes Bauer
 #
 #	This file is part of pcpublish.
 #
@@ -140,7 +140,8 @@ class PodcastRenderer():
 				match edit["type"]:
 					case "annotate":
 						title = episode["cover_art_title"] if ("cover_art_title" in episode) else episode["title"]
-						annotation_text = edit["text"].format(episode_no = episode["episode_no"] or 0, title = title)
+						title_short = episode["cover_art_title_short"] if ("cover_art_title_short" in episode) else episode["title"]
+						annotation_text = edit["text"].format(episode_no = episode["episode_no"] or 0, title = title, title_short = title_short)
 						if "font" in edit:
 							cmd += [ "-font", edit["font"] ]
 						if "font_filename" in edit:

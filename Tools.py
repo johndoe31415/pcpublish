@@ -1,5 +1,5 @@
 #	pcpublish - Authoring RSS feed and custom MP3s for a podcast
-#	Copyright (C) 2022-2022 Johannes Bauer
+#	Copyright (C) 2022-2023 Johannes Bauer
 #
 #	This file is part of pcpublish.
 #
@@ -119,6 +119,7 @@ class TextTools():
 		for (src, dst) in cls._REPLACEMENTS:
 			filename = filename.replace(src, dst)
 		filename = cls._REMAINING_REGEX.sub("", filename)
+		filename = filename.replace("-_", "_")
 		return filename
 
 if __name__ == "__main__":
