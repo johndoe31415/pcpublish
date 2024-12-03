@@ -29,6 +29,7 @@ class RSSFeedCreator():
 		"atom":			"http://www.w3.org/2005/Atom",
 		"itunes":		"http://www.itunes.com/dtds/podcast-1.0.dtd",
 		"googleplay":	"http://www.google.com/schemas/play-podcasts/1.0",
+		"content":		"http://purl.org/rss/1.0/modules/content/",
 	}
 	def __init__(self, meta, show_episodes_without_mp3 = False):
 		self._data = meta
@@ -62,17 +63,18 @@ class RSSFeedCreator():
 			# Audio file not present
 			return
 
-		description = episode["description"] + self.shownotes
+		description_with_shownotes = episode["description"] + self.shownotes
 
 		item = self._add_node(channel, "item")
 		self._add_node(item, "title", episode["title"])
-		self._add_node(item, "description", description)
+		self._add_node(item, "description", episode["description"])
+		self._add_node(item, "content:encoded", description_with_shownotes)
 		self._add_node(item, "title", episode["title"], ns = "itunes")
 		self._add_node(item, "subtitle", episode["description_short"], ns = "itunes")
 		self._add_node(item, "author", self.authors, ns = "itunes")
 		if "rss-episode" in episode["remote_uri"]["cover_art"]:
 			self._add_node(item, "image", episode["remote_uri"]["cover_art"]["rss-episode"], ns = "itunes")
-		self._add_node(item, "summary", description, ns = "itunes")
+		self._add_node(item, "summary", episode["description"], ns = "itunes")
 		self._add_node(item, "pubDate", TimeTools.format_rfc822(episode["pubdate"]))
 		enclosure = self._add_node(item, "enclosure")
 		enclosure.setAttribute("url", episode["remote_uri"]["episode"])
