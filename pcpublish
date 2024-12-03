@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #	pcpublish - Authoring RSS feed and custom MP3s for a podcast
-#	Copyright (C) 2022-2023 Johannes Bauer
+#	Copyright (C) 2022-2024 Johannes Bauer
 #
 #	This file is part of pcpublish.
 #
@@ -241,7 +241,7 @@ class PodcastRenderer():
 		if episode.get("hidden", False):
 			return
 
-		now = pytz.UTC.localize(datetime.datetime.utcnow())
+		now = datetime.datetime.now(datetime.UTC)
 		if episode["pubdate"] > now:
 			# Episode in future
 			return

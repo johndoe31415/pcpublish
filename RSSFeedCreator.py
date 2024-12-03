@@ -1,5 +1,5 @@
 #	pcpublish - Authoring RSS feed and custom MP3s for a podcast
-#	Copyright (C) 2022-2022 Johannes Bauer
+#	Copyright (C) 2022-2024 Johannes Bauer
 #
 #	This file is part of pcpublish.
 #
@@ -39,6 +39,10 @@ class RSSFeedCreator():
 		author_join = self._data["meta"].get("author_join", ", ")
 		return author_join.join(self._data["meta"]["author"])
 
+	@property
+	def shownotes(self):
+		return self._data["meta"].get("shownotes", "")
+
 	def _add_node(self, parent, name, text = None, ns = None):
 		doc = parent.ownerDocument
 		if ns is None:
@@ -57,15 +61,18 @@ class RSSFeedCreator():
 		if (not self._show_episodes_without_mp3) and (not episode["have_audiofile"]):
 			# Audio file not present
 			return
+
+		description = episode["description"] + self.shownotes
+
 		item = self._add_node(channel, "item")
 		self._add_node(item, "title", episode["title"])
-		self._add_node(item, "description", episode["description"])
+		self._add_node(item, "description", description)
 		self._add_node(item, "title", episode["title"], ns = "itunes")
 		self._add_node(item, "subtitle", episode["description_short"], ns = "itunes")
 		self._add_node(item, "author", self.authors, ns = "itunes")
 		if "rss-episode" in episode["remote_uri"]["cover_art"]:
 			self._add_node(item, "image", episode["remote_uri"]["cover_art"]["rss-episode"], ns = "itunes")
-		self._add_node(item, "summary", episode["description"], ns = "itunes")
+		self._add_node(item, "summary", description, ns = "itunes")
 		self._add_node(item, "pubDate", TimeTools.format_rfc822(episode["pubdate"]))
 		enclosure = self._add_node(item, "enclosure")
 		enclosure.setAttribute("url", episode["remote_uri"]["episode"])
