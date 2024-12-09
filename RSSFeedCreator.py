@@ -63,12 +63,15 @@ class RSSFeedCreator():
 			# Audio file not present
 			return
 
-		description_with_shownotes = episode["description"] + self.shownotes
+		if "description_html" in episode:
+			description_html = episode["description_html"] + self.shownotes
+		else:
+			description_html = episode["description"] + self.shownotes
 
 		item = self._add_node(channel, "item")
 		self._add_node(item, "title", episode["title"])
 		self._add_node(item, "description", episode["description"])
-		self._add_node(item, "content:encoded", description_with_shownotes)
+		self._add_node(item, "content:encoded", description_html)
 		self._add_node(item, "title", episode["title"], ns = "itunes")
 		self._add_node(item, "subtitle", episode["description_short"], ns = "itunes")
 		self._add_node(item, "author", self.authors, ns = "itunes")
